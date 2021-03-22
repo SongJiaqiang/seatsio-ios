@@ -3,28 +3,40 @@ import WebKit
 import JustBridge
 
 public class SeatsioWebView: WKWebView {
+    var region: String?
     var bridge: JustBridge!
-    var seatsioConfig: SeatingChartConfig
+    var seatsioConfig: SeatingChartConfig?
+
+    public init(frame: CGRect, region: String) {
+        self.region = region
+        super.init(frame: frame, configuration: WKWebViewConfiguration())
+        bridge = JustBridge(with: self)
+    }
 
     public init(frame: CGRect, region: String, seatsioConfig: SeatingChartConfig) {
         self.seatsioConfig = seatsioConfig
         super.init(frame: frame, configuration: WKWebViewConfiguration())
         bridge = JustBridge(with: self)
-        loadSeatingChart(region: region)
+        loadSeatingChart()
     }
 
     required init?(coder: NSCoder) {
         fatalError("not implemented")
     }
 
-    private func loadSeatingChart(region: String) {
+    public func reloadSeatingChart(config: SeatingChartConfig) {
+        self.seatsioConfig = config
+        loadSeatingChart()
+    }
+
+    private func loadSeatingChart() {
         let callbacks = self.buildCallbacksConfiguration().joined(separator: ",")
         let config = self.buildConfiguration()
                 .dropLast()
                 + "," + callbacks + "}";
         let htmlString = HTML
                 .replacingOccurrences(of: "%configAsJs%", with: config)
-                .replacingOccurrences(of: "%region%", with: region)
+                .replacingOccurrences(of: "%region%", with: self.region)
         self.loadHTMLString(htmlString, baseURL: nil)
     }
 
