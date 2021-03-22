@@ -53,7 +53,8 @@ public class SeatingChart {
     }
 
     public func changeConfig(_ configChange: ConfigChange) {
-        seatsioWebView.bridge.call("changeConfig", data: toJsonString(AnyEncodable(value: configChange)))
+        let data = toJsonString(AnyEncodable(value: configChange))
+        seatsioWebView.bridge.call("changeConfig", data: data)
     }
 
     public func clearSelection(_ callback: @escaping () -> ()) {

@@ -4,11 +4,14 @@ public class ConfigChange: Encodable {
 
     var objectColor: String?
     var objectLabel: String?
+    var objectIcon: String?
     var maxSelectedObjects: AnyEncodable?
     var extraConfig: AnyEncodable?
     var unavailableCategories: [String]?
     var availableCategories: [String]?
     var filteredCategories: [String]?
+
+    public init() {}
 
     public func objectColor(_ objectColor: String) -> Self {
         self.objectColor = objectColor
@@ -17,6 +20,11 @@ public class ConfigChange: Encodable {
 
     public func objectLabel(_ objectLabel: String) -> Self {
         self.objectLabel = objectLabel
+        return self
+    }
+
+    public func objectIcon(_ objectIcon: String) -> Self {
+        self.objectIcon = objectIcon
         return self
     }
 

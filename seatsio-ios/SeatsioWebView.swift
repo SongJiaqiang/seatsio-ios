@@ -3,21 +3,38 @@ import WebKit
 import JustBridge
 
 public class SeatsioWebView: WKWebView {
+    var region: String?
     var bridge: JustBridge!
-    var seatsioConfig: SeatingChartConfig
+    var seatsioConfig: SeatingChartConfig?
+
+    public init(frame: CGRect, region: String) {
+        self.region = region
+        super.init(frame: frame, configuration: WKWebViewConfiguration())
+        bridge = JustBridge(with: self)
+    }
 
     public init(frame: CGRect, region: String, seatsioConfig: SeatingChartConfig) {
         self.seatsioConfig = seatsioConfig
         super.init(frame: frame, configuration: WKWebViewConfiguration())
         bridge = JustBridge(with: self)
-        loadSeatingChart(region: region)
+        loadSeatingChart()
     }
 
     required init?(coder: NSCoder) {
         fatalError("not implemented")
     }
 
-    private func loadSeatingChart(region: String) {
+    public func reloadSeatingChart(config: SeatingChartConfig) {
+        self.seatsioConfig = config
+        loadSeatingChart()
+    }
+
+    private func loadSeatingChart() {
+        guard let region = self.region else {
+            print("Region parameter is nil.")
+            return
+        }
+
         let callbacks = self.buildCallbacksConfiguration().joined(separator: ",")
         let config = self.buildConfiguration()
                 .dropLast()
@@ -29,122 +46,130 @@ public class SeatsioWebView: WKWebView {
     }
 
     private func buildConfiguration() -> String {
+        guard let seatsioConfig = self.seatsioConfig else {
+            print("Seatsio config is nil.")
+            return ""
+        }
         let jsonEncoder = JSONEncoder()
-        let jsonData = try! jsonEncoder.encode(self.seatsioConfig)
+        let jsonData = try! jsonEncoder.encode(seatsioConfig)
         return String(decoding: jsonData, as: UTF8.self)
     }
 
     private func buildCallbacksConfiguration() -> [String] {
+        guard let seatsioConfig = self.seatsioConfig else {
+            print("Seatsio config is nil.")
+            return []
+        }
         var callbacks = [String]()
 
-        if (self.seatsioConfig.priceFormatter != nil) {
+        if (seatsioConfig.priceFormatter != nil) {
             bridge.register("priceFormatter") { (data, callback) in
-                callback(self.seatsioConfig.priceFormatter!(decodeFloat(firstArg(data))))
+                callback(seatsioConfig.priceFormatter!(decodeFloat(firstArg(data))))
             }
             callbacks.append(buildCallbackConfigAsJS("priceFormatter"))
         }
 
-        if (self.seatsioConfig.onSelectionValid != nil) {
+        if (seatsioConfig.onSelectionValid != nil) {
             bridge.register("onSelectionValid") { (data, callback) in
-                self.seatsioConfig.onSelectionValid!()
+                seatsioConfig.onSelectionValid!()
             }
             callbacks.append(buildCallbackConfigAsJS("onSelectionValid"))
         }
 
-        if (self.seatsioConfig.onSelectionInvalid != nil) {
+        if (seatsioConfig.onSelectionInvalid != nil) {
             bridge.register("onSelectionInvalid") { (data, callback) in
-                return self.seatsioConfig.onSelectionInvalid!(decodeSelectionValidatorTypes(firstArg(data)))
+                return seatsioConfig.onSelectionInvalid!(decodeSelectionValidatorTypes(firstArg(data)))
             }
             callbacks.append(buildCallbackConfigAsJS("onSelectionInvalid"))
         }
 
-        if (self.seatsioConfig.onObjectSelected != nil) {
+        if (seatsioConfig.onObjectSelected != nil) {
             bridge.register("onObjectSelected") { (data, callback) in
-                self.seatsioConfig.onObjectSelected!(decodeSeatsioObject(firstArg(data)), decodeTicketType(secondArg(data)))
+                seatsioConfig.onObjectSelected!(decodeSeatsioObject(firstArg(data)), decodeTicketType(secondArg(data)))
             }
             callbacks.append(buildCallbackConfigAsJS("onObjectSelected"))
         }
 
-        if (self.seatsioConfig.onObjectDeselected != nil) {
+        if (seatsioConfig.onObjectDeselected != nil) {
             bridge.register("onObjectDeselected") { (data, callback) in
-                self.seatsioConfig.onObjectDeselected!(decodeSeatsioObject(firstArg(data)), decodeTicketType(secondArg(data)))
+                seatsioConfig.onObjectDeselected!(decodeSeatsioObject(firstArg(data)), decodeTicketType(secondArg(data)))
             }
             callbacks.append(buildCallbackConfigAsJS("onObjectDeselected"))
         }
 
-        if (self.seatsioConfig.onObjectClicked != nil) {
+        if (seatsioConfig.onObjectClicked != nil) {
             bridge.register("onObjectClicked") { (data, callback) in
-                self.seatsioConfig.onObjectClicked!(decodeSeatsioObject(firstArg(data)))
+                seatsioConfig.onObjectClicked!(decodeSeatsioObject(firstArg(data)))
             }
             callbacks.append(buildCallbackConfigAsJS("onObjectClicked"))
         }
 
-        if (self.seatsioConfig.onBestAvailableSelected != nil) {
+        if (seatsioConfig.onBestAvailableSelected != nil) {
             bridge.register("onBestAvailableSelected") { (data, callback) in
-                self.seatsioConfig.onBestAvailableSelected!(decodeSeatsioObjects(firstArg(data)), decodeBool(secondArg(data)))
+                seatsioConfig.onBestAvailableSelected!(decodeSeatsioObjects(firstArg(data)), decodeBool(secondArg(data)))
             }
             callbacks.append(buildCallbackConfigAsJS("onBestAvailableSelected"))
         }
 
-        if (self.seatsioConfig.onBestAvailableSelectionFailed != nil) {
+        if (seatsioConfig.onBestAvailableSelectionFailed != nil) {
             bridge.register("onBestAvailableSelectionFailed") { (data, callback) in
-                self.seatsioConfig.onBestAvailableSelectionFailed!()
+                seatsioConfig.onBestAvailableSelectionFailed!()
             }
             callbacks.append(buildCallbackConfigAsJS("onBestAvailableSelectionFailed"))
         }
 
-        if (self.seatsioConfig.onHoldSucceeded != nil) {
+        if (seatsioConfig.onHoldSucceeded != nil) {
             bridge.register("onHoldSucceeded") { (data, callback) in
-                self.seatsioConfig.onHoldSucceeded!(decodeSeatsioObjects(firstArg(data)), decodeTicketTypes(secondArg(data)))
+                seatsioConfig.onHoldSucceeded!(decodeSeatsioObjects(firstArg(data)), decodeTicketTypes(secondArg(data)))
             }
             callbacks.append(buildCallbackConfigAsJS("onHoldSucceeded"))
         }
 
-        if (self.seatsioConfig.onHoldFailed != nil) {
+        if (seatsioConfig.onHoldFailed != nil) {
             bridge.register("onHoldFailed") { (data, callback) in
-                self.seatsioConfig.onHoldFailed!(decodeSeatsioObjects(firstArg(data)), decodeTicketTypes(secondArg(data)))
+                seatsioConfig.onHoldFailed!(decodeSeatsioObjects(firstArg(data)), decodeTicketTypes(secondArg(data)))
             }
             callbacks.append(buildCallbackConfigAsJS("onHoldFailed"))
         }
 
-        if (self.seatsioConfig.onReleaseHoldSucceeded != nil) {
+        if (seatsioConfig.onReleaseHoldSucceeded != nil) {
             bridge.register("onReleaseHoldSucceeded") { (data, callback) in
-                self.seatsioConfig.onReleaseHoldSucceeded!(decodeSeatsioObjects(firstArg(data)), decodeTicketTypes(secondArg(data)))
+                seatsioConfig.onReleaseHoldSucceeded!(decodeSeatsioObjects(firstArg(data)), decodeTicketTypes(secondArg(data)))
             }
             callbacks.append(buildCallbackConfigAsJS("onReleaseHoldSucceeded"))
         }
 
-        if (self.seatsioConfig.onReleaseHoldFailed != nil) {
+        if (seatsioConfig.onReleaseHoldFailed != nil) {
             bridge.register("onReleaseHoldFailed") { (data, callback) in
-                self.seatsioConfig.onReleaseHoldFailed!(decodeSeatsioObjects(firstArg(data)), decodeTicketTypes(secondArg(data)))
+                seatsioConfig.onReleaseHoldFailed!(decodeSeatsioObjects(firstArg(data)), decodeTicketTypes(secondArg(data)))
             }
             callbacks.append(buildCallbackConfigAsJS("onReleaseHoldFailed"))
         }
 
-        if (self.seatsioConfig.onSelectedObjectBooked != nil) {
+        if (seatsioConfig.onSelectedObjectBooked != nil) {
             bridge.register("onSelectedObjectBooked") { (data, callback) in
-                self.seatsioConfig.onSelectedObjectBooked!(decodeSeatsioObject(firstArg(data)))
+                seatsioConfig.onSelectedObjectBooked!(decodeSeatsioObject(firstArg(data)))
             }
             callbacks.append(buildCallbackConfigAsJS("onSelectedObjectBooked"))
         }
 
-        if (self.seatsioConfig.tooltipInfo != nil) {
+        if (seatsioConfig.tooltipInfo != nil) {
             bridge.register("tooltipInfo") { (data, callback) in
-                callback(self.seatsioConfig.tooltipInfo!(decodeSeatsioObject(firstArg(data))))
+                callback(seatsioConfig.tooltipInfo!(decodeSeatsioObject(firstArg(data))))
             }
             callbacks.append(buildCallbackConfigAsJS("tooltipInfo"))
         }
 
-        if (self.seatsioConfig.onChartRendered != nil) {
+        if (seatsioConfig.onChartRendered != nil) {
             bridge.register("onChartRendered") { (data, callback) in
-                self.seatsioConfig.onChartRendered!(SeatingChart(self))
+                seatsioConfig.onChartRendered!(SeatingChart(self))
             }
             callbacks.append(buildCallbackConfigAsJS("onChartRendered"))
         }
 
-        if (self.seatsioConfig.onChartRenderingFailed != nil) {
+        if (seatsioConfig.onChartRenderingFailed != nil) {
             bridge.register("onChartRenderingFailed") { (data, callback) in
-                self.seatsioConfig.onChartRenderingFailed!()
+                seatsioConfig.onChartRenderingFailed!()
             }
             callbacks.append(buildCallbackConfigAsJS("onChartRenderingFailed"))
         }
